@@ -2,7 +2,6 @@
 Video demo [Ecommerce https://youtu.be/ZZ3-H1e_8kE](https://youtu.be/ZZ3-H1e_8kE)
 
 <hr/>
-
 ## I. Setup project
 ```diff
 git clone https://github.com/studev1922/ecommerce.git
