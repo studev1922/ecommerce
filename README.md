@@ -1,5 +1,5 @@
 # mini ecommerce
-Video demo [Clone git project và triển khai web application youtu.be](https://youtu.be/YkTWRHM7alo)
+Video demo [Ecommerce https://youtu.be/ZZ3-H1e_8kE](https://youtu.be/ZZ3-H1e_8kE)
 
 <hr/>
 
