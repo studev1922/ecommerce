@@ -12,8 +12,8 @@ git clone https://github.com/studev1922/ecommerce.git
 ```diff
 cd ./ecommerce
 ```
-`run file database ...`<br/>
-Run this file to create database mssql(SQL server)[ecommerce/ecommerce.sql](./ecommerce.sql)
+Run this file to create database mssql(SQL server)<br/>
+`run file database ...`[ecommerce/ecommerce.sql](./ecommerce.sql)
 
 ## I.1 Start server
 - `npm start` to run server api
