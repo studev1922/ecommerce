@@ -6,7 +6,7 @@ import Carousel from '../components/Carousel';
 import Products from '../components/Products';
 
 const LOCAL = `http://localhost:8080`;
-const { path, page, qty } = { path: '/api/products', qty: 100, page: 0 };
+const { path, page, qty } = { path: '/api/products', qty: 20, page: 0 };
 
 class Application extends React.Component {
 
@@ -17,12 +17,31 @@ class Application extends React.Component {
     async componentDidMount() {
         const pathApi = `${LOCAL}${path}-page?qty=${qty}&page=${page}`;
         let result = await axios.get(pathApi);
-        if (result.status == 200) {
-            this.state.products = result.data.splice(0, 20);
-            this.setState(this.state);
+        if (result.status === 200) {
+            this.setState({ products: result.data });
             const size = (result.headers["content-length"] / (1024 * 1024)).toFixed(2);
             console.log(`get ${result?.data?.length} data from ${path} <---> size:(${size}MB)`);
         }
+
+        ((count, speed) => {
+            const pathApi = `${LOCAL}${path}-relationships`;
+            const interval = setInterval(async () => {
+                let result = await axios.get(pathApi, {timeout: 10E3});
+                if(--count < 1) {
+                    clearInterval(interval);
+                    console.log('clear interval');
+                } else if (result.status === 200) {
+                    const size = (result.headers["content-length"] / (1024 * 1024)).toFixed(2);
+                    console.log(`get ${result?.data?.length} data from ${path} <---> size:(${size}MB)`);
+                }
+            }, speed)
+        
+            const intervalCount = setInterval(() => {
+                if(count < 0) clearInterval(intervalCount);
+                else console.log(count);
+            }, 5E3);
+        
+        })(10E3,1); // call 10 thousand times.
     }
 
     render() {

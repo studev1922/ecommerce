@@ -33,6 +33,7 @@ const util = {
         return query;
     }
 }
+
 // modify data to mssql data
 const modify = (data) => {
     if (data === null) return 'NULL';
@@ -52,10 +53,12 @@ const modify = (data) => {
         default: return data;
     }
 }
+
 const date = {
     format: (data, format) => moment(data).format(format || 'YYYY-MM-DD HH:mm:ss.SSS'),
     setTo: (entity, key, format) => entity[key] = date.format(entity[key], format)
 }
+
 const query = {
     procedure: (proceName, data) => `EXECUTE ${proceName} ${modify(data)}`,
 
@@ -64,8 +67,42 @@ const query = {
      * @param {...any} serials to join query
      * @returns select query by table
      */
-    select: (table, top, fields, ...serials) =>
-        `SELECT${top ? ` TOP ${top}` : ''} ${fields || '*'} ${table.includes('FROM') ? table : `FROM ${table}`} ${serials.join('\xa0')}`,
+    select: (table, top, fields, ...serials) => `SELECT${top ? ` TOP ${top}` : ''} ${fields || '*'} `
+        + `${table.includes('FROM') ? table : `FROM ${table}`} ${serials.join('\xa0')}`,
+
+    /**
+     * @param {String} table name to insert
+     * @param {Object | Array} data to insert into ...
+     * @param {Array<String>} keys to set insert into
+     * @returns insert query by table
+     */
+    insert: (table, data, keys) => util.evaluate(table, data, keys, 'insert'),
+
+    /**
+     * 
+     * @param {String} table name to update
+     * @param {Object | Array} data for update
+     * @param {Array<String>} keys to set update data
+     * @param {String} fieldId field's name of ID or default by keys[0]
+     * @returns query to update
+     */
+    update: (table, data, keys, fieldId) => util.evaluate(table, data, keys, 'update', fieldId), // field's name of ID
+
+    /**
+     * 
+     * @param {String} table to delete data
+     * @param {String} key field's name
+     * @param {any} ids are values to delete
+     * @returns query to delete
+     */
+    delete: (table, key, ids) => {
+        let query = new String();
+        if (Array.isArray(ids))
+            for (let id of modify(ids))
+                query += `DELETE FROM ${table} WHERE ${key} = ${id}\n`;
+        else query += `DELETE FROM ${table} WHERE ${key} = ${modify(ids)}\n`;
+        return query;
+    },
 
     /**
      * @param {String} table the table name
@@ -101,40 +138,6 @@ const query = {
 
         return query.select(table, top, fields, ...serials);
     },
-    
-    /**
-     * @param {String} table name to insert
-     * @param {Object | Array} data to insert into ...
-     * @param {Array<String>} keys to set insert into
-     * @returns insert query by table
-     */
-    insert: (table, data, keys) => util.evaluate(table, data, keys, 'insert'),
-    
-    /**
-     * 
-     * @param {String} table name to update
-     * @param {Object | Array} data for update
-     * @param {Array<String>} keys to set update data
-     * @param {String} fieldId field's name of ID or default by keys[0]
-     * @returns query to update
-     */
-    update: (table, data, keys, fieldId) => util.evaluate(table, data, keys, 'update', fieldId), // field's name of ID
-    
-    /**
-     * 
-     * @param {String} table to delete data
-     * @param {String} key field's name
-     * @param {any} ids to delete
-     * @returns query to delete
-     */
-    delete: (table, key, ids) => {
-        let query = new String();
-        if (Array.isArray(ids))
-            for (let id of modify(ids))
-                query += `DELETE FROM ${table} WHERE ${key} = ${id}\n`;
-        else query += `DELETE FROM ${table} WHERE ${key} = ${modify(ids)}\n`;
-        return query;
-    },
 
     /**
      * EX: INSERT INTO [TABLE]([id],[name]) VALUES (1, 'abc'),(2, 'def'),(3, 'ghi')
@@ -145,6 +148,7 @@ const query = {
      * @returns insert query
      */
     multipleInsert: (table, data, fields) => {
+        if(!data) return;
         let query = `INSERT INTO ${table}(${fields}) VALUES\n`;
         const compileInsert = `const{${fields}}=e; e=Object.values({${fields}}).join('\x2c')`
 
@@ -152,8 +156,8 @@ const query = {
         if (Array.isArray(data)) {
             for (let e of data) {
                 eval(compileInsert);
-                query += `(${e}),\n`
-            } return query.substring(0, query.length - 2);
+                query += `(${e}),`
+            } return query.substring(0, query.length - 1);
         } else {
             let e = data;
             eval(compileInsert);
@@ -161,21 +165,40 @@ const query = {
         }
     },
 
+    /**
+     * 
+     * @param {string} table named for delete query
+     * @param {string} key delete by column's name
+     * @param {any} ids are values to delete by key
+     * @returns 
+     */
     multipleDelete: (table, key, ids) => {
-        let query = `DELETE FROM ${table} WHERE`
+        let query = `DELETE FROM ${table} WHERE(`
         ids = modify(ids);
         for (const id of ids) query += ` ${key}=${id}\n OR`;
-        query = query.substring(0, query.length - 3);
+        query = query.substring(0, query.length - 3) + ')';
         return query;
     }
 }
+
 const query2 = {
-    toggleAccess: (table, key, ids, access) => {
+    /**
+     * EX: UPDATE [table] SET [field] = newValue WHERE key=ids[0] OR key=ids[1]
+     * 
+     * @param {string} table named to update field
+     * @param {string} key named column for condition of update query
+     * @param {any} ids are values of column for condition
+     * @param {any} newValue is new value for set data
+     * @param {string || undefined} field is named column of newValue || default([access]) to set
+     * @returns {string} the query
+     */
+    toggleAccess: (table, key, ids, newValue, field) => {
         const condition = ` OR ${key}=`;
-        const [isArr, set] = [Array.isArray(ids), 'access'];
-        const query = `UPDATE ${table} SET ${set}=${modify(access)} WHERE\n${key}=`;
+        const [isArr, set] = [Array.isArray(ids), field || 'access'];
+        const query = `UPDATE ${table} SET ${set}=${modify(newValue)} WHERE\n${key}=`;
         return query + (isArr ? modify(ids).join(condition) : modify(ids));
     }
 }
+
 export default query;
 export { modify, date, query2 }

@@ -5,7 +5,8 @@
   "type": "module",
   "main": "main",
   "scripts": {
-    "start": "nodemon ./src/main"
+    "start": "nodemon ./src/main",
+    "test": "nodemon ./src/test/main.js"
   },
   "author": "StuDev",
   "license": "ISC",

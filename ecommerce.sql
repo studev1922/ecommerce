@@ -55,7 +55,7 @@ GO
 
 IF OBJECT_ID('CATEGORIES', 'U') IS NULL
 CREATE TABLE CATEGORIES (
-    cgid varchar(20) primary key,
+    cgid smallint primary key,
     name nvarchar(256) not null,
     image varchar(256) default 'default.png',
     note nvarchar(256)
@@ -74,7 +74,7 @@ CREATE TABLE PRODUCTS (
 
     u_id varchar(80) foreign key references USERS(uid) 
 	on update cascade on delete cascade not null,
-    c_id varchar(20) foreign key references CATEGORIES(cgid) 
+    c_id smallint foreign key references CATEGORIES(cgid) 
 	on update cascade on delete set null
 );
 GO
@@ -180,26 +180,48 @@ GO
 IF EXISTS (SELECT [object_id] FROM sys.procedures WHERE name = N'SP_LOGIN') DROP PROC SP_LOGIN
 GO
 CREATE PROCEDURE SP_LOGIN
-    @username varchar(50),
-    @password varchar(256)
+   @username varchar(50),
+   @password varchar(256)
 AS
 BEGIN
 	DECLARE @meserror nvarchar(256) = CONCAT (
 		'username:', @username, ' and password:', @password, ' is incorrect'
 	);
 
-    IF @username is null OR LEN(@password) = 0 RAISERROR('username is empty',15,1);
-    IF @password is null OR LEN(@password) = 0 RAISERROR('password is empty',15,1);
+   IF @username is null OR LEN(@password) = 0 RAISERROR('username is empty',15,1);
+   IF @password is null OR LEN(@password) = 0 RAISERROR('password is empty',15,1);
 
-    SELECT * INTO #USER FROM USERS 
-    WHERE uid = @username and PWDCOMPARE(@password, password) = 1
+   SELECT u.*,
+      (
+         SELECT r.*, a.regTime 
+            FROM AUTHORITIES a
+            LEFT JOIN ROLES r 
+               ON r.rid = a.r_id
+               WHERE a.u_id = u.uid
+         FOR JSON PATH
+      ) as roles INTO #USER 
+      FROM USERS u
+   WHERE uid = @username and PWDCOMPARE(@password, password) = 1
 
-    IF EXISTS(SELECT uid FROM #USER) SELECT * FROM #USER
-    ELSE RAISERROR(@meserror, 12,1);
+   IF EXISTS(SELECT uid FROM #USER) SELECT * FROM #USER
+   ELSE RAISERROR(@meserror, 12,1);
 END
 GO
 
 -- +++++++++++++++++++++++++++++++++++++++++++++++++++++++++ CREATE VIEWS
+IF EXISTS (SELECT name FROM sys.views WHERE name = N'VIEW_USERS') DROP VIEW VIEW_USERS
+GO
+CREATE VIEW VIEW_USERS
+AS SELECT u.*,
+   ISNULL((
+        SELECT r.rid, r.name, a.regTime FROM ROLES r
+            INNER JOIN AUTHORITIES a
+            ON a.r_id = r.rid AND u.uid = a.u_id
+        FOR JSON PATH
+    ), '[]') as roles
+   FROM USERS u
+GO
+
 IF EXISTS (SELECT name FROM sys.views WHERE name = N'VIEW_PRODUCTS') DROP VIEW VIEW_PRODUCTS
 GO
 CREATE VIEW VIEW_PRODUCTS 

@@ -4,7 +4,13 @@ import config from '../../configs/mssqlConfig.js';
 
 const show = (dotenv.config().parsed?.SHOW_SQL == 'true') || false;
 
-// Keep connection waiting to close
+/**
+ * Keep connection waiting to close
+ * 
+ * const pool =  sql.connect;
+ * const result = (await sql.execute(query)); // OR pool...
+ * if(pool.connected) pool.close();
+ */
 const sql = {
     connect: (await mssql.connect(config)),
     execute: async (query) => {
@@ -13,14 +19,23 @@ const sql = {
     }
 }
 
-// Connect and close instantly
+/**
+ * Connect and close instantly
+ * @param {string} query to execute
+ * @returns {Promise<IResult<any>>}
+ */
 const request = async (query) => {
     const pool = (await mssql.connect(config)).request();
     if (show) console.log(query);
     return pool.query(query);
 }
 
-// Connect and close in this function;
+/**
+ *  Connect and close in this function;
+ * @param {string} table named to set identity
+ * @param {string} key for select max of columns, EX: MAX(id)
+ * @returns undefined
+ */
 const reseed = async (table, key) => {
     const pool = new mssql.ConnectionPool(config);
     const conn = await pool.connect();
@@ -32,8 +47,8 @@ const reseed = async (table, key) => {
     return (await conn.query(query).finally(() => conn.close()));
 }
 
-// Connect and close in this function
 /**
+ * Connect and close in this function
  * 
  * @param {String} objectName EX: console.log((await getFields('PRODUCTS')).recordset); 
  * @returns {Promise} all fields in object
@@ -48,5 +63,5 @@ const getFields = async (objectName) => {
     return (await conn.query(query).finally(() => conn.close()));
 }
 
-export { sql, reseed, getFields }
-export default request;
+export { request, reseed, getFields }
+export default sql;

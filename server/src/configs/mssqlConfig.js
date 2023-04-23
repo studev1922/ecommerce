@@ -9,7 +9,7 @@ export default {
     pool: {
         max: 10,
         min: 0,
-        idleTimeoutMillis: 1.5E4
+        idleTimeoutMillis: 1E4
     },
     options: {
         encrypt: true,

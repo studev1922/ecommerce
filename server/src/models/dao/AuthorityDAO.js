@@ -1,93 +1,62 @@
-import sp, { modify } from '../utils/queryHelper.js';
-import request, { sql } from '../utils/sqlService.js';
+import stg from '../storage.js';
+import AbstractDAO from './AbstractDAO.js';
+import sql from '../services/sqlService.js';
+import daoes from '../services/daoService.js';
+import sp, { modify } from '../services/queryHelper.js';
 
-const _sp = {
+/**
+ * Only read and update data.
+ * Cannot be insert or delete any in this table!!!
+ */
+export class RoleDAO extends AbstractDAO {
 
-    delete: (ids) => { // create query to delete multiple id
-        const [id1, id2] = AuthorityDAO.FIELDS;
-        let query = `DELETE FROM ${AuthorityDAO.TABLE} WHERE `;
+   constructor(arrayStorage = []) {
+      const primary = 'rid';
+      if (!Array.isArray(arrayStorage)) arrayStorage = [];
+      super('[ROLES]', primary, [primary, 'name'], arrayStorage);
+   }
 
-        if (Array.isArray(ids)) {
-            for (const id of modify(ids))
-                query += `(${id1}=${id[id1]} AND ${id2}=${id[id2]})\nOR`;
-            query = query.slice(0, query.length - 3);
-        } else {
-            const id = modify(ids);
-            query += `(${id1}=${id[id1]} AND ${id2}=${id[id2]})`;
-        } return query;
-    }
+   save() { throw `this function in't working!` }
+   delete() { throw `this function in't working!` }
 }
 
-const role = {
-    KEY: 'rid',
-    TABLE: '[ROLES]',
+export default class AuthorityDAO {
 
-    getList: async () => {
-        let query = sp.select(role.TABLE);
-        return (await request(query)).recordset
-    },
+   table = "[AUTHORITIES]";
+   uid = 'u_id';
+   rid = 'r_id';
 
-    getByIds: async (ids) => {
-        const isArr = Array.isArray(ids);
-        let query = sp.select(role.TABLE, null, null, `WHERE ${role.KEY} = `);
+   async #read(top, fields, ...serials) {
+      let { table } = this;
+      let query = sp.select(table, top, fields, serials);
+      return (await sql.execute(query)).recordset;
+   }
 
-        // multiple id or single id
-        query += isArr ? ids.toString().replaceAll('\x2c', ` OR ${role.KEY}=`) : ids;
-        const data = (await request(query)).recordset;
-        return isArr ? data : data[0];
-    }
+   async #createRoles(u_id, names) {
+      let data = (await daoes.role.getList()); // get all role in storage
+      let result = data.filter(e => names.includes(e.name)); // get all roles includes names
+      return result.map(({ rid }) => ({ u_id, [this.rid]: rid })); // map roles to authorities data
+   }
+
+   getList = async () => this.#read();
+
+   /**
+    * @param {Array<String>} u_ids 
+    * @returns all data with uid in u_ids 
+    */
+   async getByUID(u_ids) {
+      if (!u_ids) return [];
+      let condition = `WHERE ${this.uid} IN (${modify(u_ids)})`;
+      return this.#read(undefined, undefined, condition);
+   }
+
+   async save(u_id, roles, getAuth = false) {
+      if (!u_id || !roles) return [];
+      let { table, uid, rid } = this;
+      let auths = (await this.#createRoles(u_id, roles));
+      let query = sp.multipleInsert(table, auths, [uid, rid]);
+      return sql.execute(query)
+         .then(() => getAuth ? auths : roles)
+         .catch(e => { throw e });
+   }
 }
-
-export class AuthorityDAO {
-    static TABLE = '[AUTHORITIES]';
-    static FIELDS = ['u_id', 'r_id'];
-
-    getList = async () => { // get all authorities
-        const query = sp.select(AuthorityDAO.TABLE);
-        return sql.execute(query).then(async r => r.recordset)
-    };
-
-    /**
-     * EX1: {u_id: 'abc'} to get all authorities by u_id = 'abc'
-     * EX2: {r_id: 1} to get all authorities by r_id = 1
-     * 
-     * @param {Object} id to get data
-     * @returns all the data got by half id
-     */
-    getByHalfId = async (id) => { // get by u_id or r_id
-        const [table, fields, top] = [AuthorityDAO.TABLE, AuthorityDAO.FIELDS, undefined];
-        const key = Object.keys(id)[0];
-        const query = sp.select(table, top, fields, `WHERE ${key} = ${modify(id[key])}`);
-        return sql.execute(query).then(async r => r.recordset)
-    }
-
-    getByIds = async (ids) => { // get by id EX: {u_id: 'abc', r_id: 1} WHERE u_id='abc' AND r_id=1
-        let query = sp.select(AuthorityDAO.TABLE, null, null, 'WHERE ');
-        const isArr = Array.isArray(ids);
-
-        if (isArr) { // single id or multiple id
-            for (const id of ids) {
-                const { u_id, r_id } = modify(id);
-                query += `(u_id=${u_id} AND r_id=${r_id}) OR `;
-            } query = query.slice(0, query.length - 3);
-        } else {
-            const { u_id, r_id } = modify(ids);
-            query += `(u_id=${u_id} AND r_id=${r_id})`;
-        }
-        return sql.execute(query).then(async r => r.recordset)
-    };
-
-    insert = async (data, insertOnly) => {
-        const query = sp.multipleInsert(AuthorityDAO.TABLE, data, AuthorityDAO.FIELDS);
-        return sql.execute(query).then(async r => insertOnly ? r : await this.getByIds(data));
-    };
-
-    delete = async (ids) => {
-        let query = _sp.delete(ids);
-        return sql.execute(query).then(async r => r.rowsAffected[0]);
-    };
-
-}
-
-export { role }
-export default new AuthorityDAO();
