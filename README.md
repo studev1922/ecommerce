@@ -27,25 +27,4 @@ cd ./client | npm install | npm start
 `npm test - npm run build - npm run eject`
 <hr/>
 
-<div class="video">
-  <iframe width="560" height="315" src="https://www.youtube.com/embed/ZZ3-H1e_8kE" 
-          title="YouTube video player" frameborder="0" allowfullscreen
-          allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share">
-  </iframe>
-</div>
-<style>
-.video {
-  width: 100%;
-  height: 200px;
-  border: 1px solid red;
-  overflow: hidden;
-  position: relative;
-}
-iframe {
-  position: absolute;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-}
-</style>
+[![Git clone ecommerce](https://img.youtube.com/vi/ZZ3-H1e_8kE/0.jpg)](https://www.youtube.com/watch?v=ZZ3-H1e_8kE)
