@@ -27,4 +27,4 @@ cd ./client | npm install | npm start
 `npm test - npm run build - npm run eject`
 <hr/>
 
-[![IMAGE ALT TEXT HERE](https://img.youtube.com/vi/ZZ3-H1e_8kE/0.jpg)](https://www.youtube.com/watch?v=ZZ3-H1e_8kE)
+[![Git clone ecommerce](https://img.youtube.com/vi/ZZ3-H1e_8kE/0.jpg)](https://www.youtube.com/watch?v=ZZ3-H1e_8kE)
