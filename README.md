@@ -27,4 +27,6 @@ cd ./client | npm install | npm start
 `npm test - npm run build - npm run eject`
 <hr/>
 
-[![Git clone ecommerce](https://img.youtube.com/vi/ZZ3-H1e_8kE/0.jpg)](https://www.youtube.com/watch?v=ZZ3-H1e_8kE)
+<div class="video">
+  <iframe width="560" height="315" src="https://www.youtube.com/embed/ZZ3-H1e_8kE" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen></iframe>
+</div>
