@@ -12,7 +12,7 @@ async function testData(quantity = 1e2) {
    let logSize = async () => {
       let data = (await dao.getMap());
       let range = storage.products.size;
-      console.log(`size >>> `, data.size,':', range);
+      console.log(`size >>> `, data.size, ':', range);
    }
 
    let interval = setInterval(logSize, 5e2);
@@ -44,16 +44,28 @@ async function testData(quantity = 1e2) {
       return array;
    }
 
-   let values = Array.from(await randomData(quantity));
    let times = quantity.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ".");
    let startTime = new Date().getTime();
 
-   console.log(`prepare ${values.length} data.`);
-   values = (await dao.save(values));
-   await logSize();
-   let prids = values.map(e => e.prid);
-   console.log(`inserted ${prids.length} data.`);
+   // Insert data
+   let values = Array.from(await randomData(quantity));
+   console.log(`prepare ${values.length} data for insert.`);
+   values = (await dao.save(values, true));
+   await logSize(); // after inserted
+   console.log(`inserted ${values.length} data.`);
+
+   // Update data
+   let values2 = Array.from(await randomData(quantity));
+   values2.forEach((e, i) => e.prid = values[i].prid);
+   console.log(`prepare ${values2.length} data for update.`);
+   values2 = (await dao.update(values2, true));
+   await logSize(); // after updated
+   console.log(`updated ${values2.length} data.`);
+
+   // Delete data
+   let prids = values2.map(e => e.prid);
    let result = (await dao.delete(prids));
+   await logSize(); // after updated
    console.log(`deleted ${result} data.`);
 
    clearInterval(interval);
@@ -63,14 +75,3 @@ async function testData(quantity = 1e2) {
 }
 
 await testData(1.2e3);
-
-// let images = [
-//    'https://media.sproutsocial.com/uploads/2017/02/10x-featured-social-media-image-size.png',
-//    'https://cdn.shopify.com/s/files/1/0137/6210/1348/collections/112991633508_1600x.jpg?v=1629297835',
-//    'https://wpassets.adda247.com/wp-content/uploads/multisite/sites/5/2022/06/05074905/world-environment-day.jpg'
-// ]
-
-// let dataImg = [];
-// for(let i = 1; i < 2.5e3; i++) dataImg.push({prid: i, images})
-
-// await dao.testImg(dataImg);

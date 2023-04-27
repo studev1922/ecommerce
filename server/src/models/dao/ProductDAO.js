@@ -1,17 +1,18 @@
 import AbstractDAO from './AbstractDAO.js';
-import sp from '../services/queryHelper.js';
 import sql from '../services/sqlService.js';
+import sp, { modify } from '../services/queryHelper.js';
 
 class ProductImage {
    static table = '[PRODUCT_IMAGES]';
-   static fields = ['pr_id', 'image'];
+   static t_prid = 'pr_id';
+   static t_image = 'image';
 
    static async #executeStack(values) {
-      let { table, fields } = this;
+      let { table, t_prid, t_image } = this;
       let [sizeQuery, result] = [1e3, new Array()];
       let countExecute = Math.floor(values.length / sizeQuery) + 1;
       let execute = async (data, i) => {
-         let query = sp.multipleInsert(table, data, fields)
+         let query = sp.multipleInsert(table, data, [t_prid, t_image])
          await sql.execute(query).then(_ => {
             result.push({ message: 'success', range: [i, data.length] });
          }).catch(e => {
@@ -42,6 +43,35 @@ class ProductImage {
 
       if (isArray) for (let e of data) set(e); else set(data);
       return this.#executeStack(values);
+   }
+
+   static async update(data, constants) {
+      let isArray = Array.isArray(data);
+      let { primary } = constants;
+      let ids = isArray ? data.map(e => e[primary]) : data[primary];
+
+      await this.deleteBy_prids(ids).catch(e => e.message); // success:number <> error:string
+      return this.save(data, constants);
+   }
+
+   static async delete(pr_id, images) {
+      let { table, t_prid, t_image } = ProductImage, query = '';
+      if (images?.length) {
+         images = images.map(image => ({ pr_id, image }));
+         query = sp.multipleDelete(table, t_image, images)
+         query += ` AND ${t_prid} = ${modify(pr_id)}`
+      } else query = sp.delete(table, t_prid, pr_id);
+
+      return sql.execute(query).then(r => r.rowsAffected.reduce((x, y) => x + y));
+   }
+
+   static async deleteBy_prids(pr_ids) {
+      let { table, t_prid } = ProductImage;
+      let query = Array.isArray(pr_ids)
+         ? sp.multipleDelete(table, t_prid, pr_ids)
+         : sp.delete(table, t_prid, pr_ids);
+
+      return sql.execute(query).then(r => r.rowsAffected.reduce((x, y) => x + y));
    }
 }
 
@@ -88,11 +118,19 @@ export default class ProductDAO extends AbstractDAO {
       this.#setData(data);
    }
 
-   save = (values) => super.save(values, true)
+   save = (values, isLogImg) => super.save(values, true)
       .then(async result => {
          let { images } = this;
          result.forEach((e, i) => e[images] = values[i][images]);
-         await ProductImage.save(result, this);
+         let state = (await ProductImage.save(result, this)); // state deleted images
+         if(isLogImg) console.log(`size: ${values.length}`,state);
+         return result;
+      });
+
+   update = (values, isLogImg) => super.update(values)
+      .then(async result => {
+         let state = (await ProductImage.update(result, this)); // state deleted images
+         if(isLogImg) console.log(`size: ${values.length}`,state);
          return result;
       });
 }
