@@ -150,8 +150,10 @@ IF EXISTS (SELECT [object_id] FROM sys.triggers WHERE name = N'TG_PRODUCTS') DRO
 GO
 CREATE TRIGGER TG_PRODUCTS ON PRODUCTS
 AFTER INSERT AS BEGIN -- return all products after inserted
-	DECLARE @top int = (SELECT COUNT(prid) FROM inserted);
-    SELECT TOP (@top) * FROM PRODUCTS ORDER BY prid DESC;
+	DECLARE @qty int = (SELECT COUNT(prid) FROM inserted);
+    DECLARE @size int = (SELECT COUNT(prid) FROM PRODUCTS);
+    SELECT * FROM PRODUCTS ORDER BY prid 
+    OFFSET (@size-@qty) ROWS FETCH NEXT @qty ROWS ONLY;
 END
 GO
 

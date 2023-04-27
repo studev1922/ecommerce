@@ -5,16 +5,15 @@ import daoes from '../services/daoService.js';
 
 export default class UserDAO extends AbstractDAO {
 
-   constructor(storageArray = []) {
-      if (!Array.isArray(storageArray)) storageArray = [];
-      super('[USERS]', 'uid', ['uid', 'password', 'name', 'image'], storageArray);
+   constructor(data) {
+      super('[USERS]', 'uid', ['uid', 'password', 'name', 'image'], data);
       this.role = 'roles';
    }
 
    #setData(data, ...deletes) {
-      let { primary, role } = this;
+      let { role } = this;
       let setOnce = (e) => {
-         e.password = e.password.toString('base64');
+         e.password = e.password?.toString('base64');
          if (e[role]) e[role] = JSON.parse(e[role]).map(r => r.name);
          for (let del of deletes) delete e[del];
       }
@@ -25,11 +24,12 @@ export default class UserDAO extends AbstractDAO {
    }
 
    async pullList() {
+      let { data, primary } = this;
       let query = sp.select('[VIEW_USERS]');
       let result = (await sql.execute(query)).recordset;
-      while (this.data.length) this.data.pop();
-      this.data.push(...result);
-      this.#setData(this.data);
+      data.clear();
+      result.forEach(e => data.set(e[primary], e));
+      this.#setData(data);
    }
 
    async login(uid, password) {
@@ -48,9 +48,10 @@ export default class UserDAO extends AbstractDAO {
       let query = sp.procedure('SP_REGISTER', [uid, password, name, image]);
 
       return sql.execute(query).then(async r => {
+         let { role, data, primary } = this;
          let result = (await this.#setData(r.recordset))[0];
-         result[this.role] = (await daoes.auth.save(uid, roles));
-         storageArray.push(result);
+         result[role] = (await daoes.auth.save(uid, roles));
+         data.set(result[primary], result);
          return result;
       });
    }

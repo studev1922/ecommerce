@@ -1,68 +1,104 @@
+import { MapData } from '../storage.js';
 import sp from '../services/queryHelper.js';
 import sql from '../services/sqlService.js';
-import * as sp_arr from '../services/arrayHelper.js';
+
 
 export default class AbstractDAO {
 
-   constructor(table, primary, fields, data) {
+   /**
+    * @param {String} table named table
+    * @param {String} primary filed name of id
+    * @param {Array<String>} fields to insert and update into database
+    * @param {MapData} data extends Map
+    */
+   constructor(table, primary, fields, data = new MapData()) {
       this.data = data;
       this.table = table;
       this.fields = fields;
       this.primary = primary;
    }
 
+   /**
+    * Get first data from database add to storage 
+    */
    async pullList() {
-      let query = sp.select(this.table);
+      let { data, table, primary } = this;
+      let query = sp.select(table);
       let result = (await sql.execute(query)).recordset;
-      while (this.data.length) this.data.pop();
-      this.data.push(...result);
+      data.clear(); // begin clear all old data.
+      data.sets(primary, result); // add all data.
    }
 
-   async getList(fileds) {
+   /**
+    * @param {Array<String>} fields to get only the fields in the data
+    * @returns {MapData} extends Map with fields mapped;
+    */
+   async getMap(fields) {
       let { data } = this;
       if (!data?.length) await this.pullList();
-      return fileds ? sp_arr.mapData(data, fileds) : data;
+      return fields ? data.withFields(fields) : data;
    }
 
-   getByIds(ids) {
-      let { data, primary } = this;
-      return sp_arr.default.getByValues(data, ids, primary);
-   }
+   /**
+    * get all data by id
+    * @param {any} ids of data, has one or array
+    * @returns {Array || Object} list data has id equals with ids parameter
+    */
+   getByIds = (ids) => this.data.gets(ids);
 
-   async save(values) {
-      let { table, fields, data } = this;
-      let query = Array.isArray(data)
+   /**
+    * insert all data to the database && set all into storage
+    * <hr/>
+    * @param {Array || Object} values 
+    * @param {Boolean} isRecord to get recordsets || values
+    * @returns an Array inserted value
+    */
+   async save(values, isRecord) {
+      let { table, fields, data, primary } = this;
+      let isArray = Array.isArray(data);
+      let query = isArray
          ? sp.multipleInsert(table, values, fields)
          : sp.insert(table, values, fields);
 
-      return sql.execute(query).then(() => {
-         data.push(...values);
-         return values;
+      return sql.execute(query).then(r => {
+         let result = isRecord ? r.recordsets.map(e => e[0])
+            : isArray ? values : [values];
+         data.sets(primary, result);
+         return result;
       })
    }
 
+   /**
+    * update all to database && set all into storage
+    * <hr/>
+    * @param {Array || Object} values 
+    * @returns {Array} values of parameter if update successfully
+    */
    async update(values) {
       let { table, fields, primary, data } = this;
       let query = sp.update(table, values, fields, primary);
 
       return sql.execute(query).then(() => {
-         sp_arr.default.update(data, values, `?.${primary}`);
+         data.set(primary, values);
          return values;
       })
    }
 
-   async delete(ids) {
+   /**
+    * 
+    * @param {any} ids delete all by ids
+    * @returns {Number} number of deleted data
+    */
+   delete(ids) {
       let isArr = Array.isArray(ids);
       let { table, primary, data } = this;
       let query = isArr
          ? sp.multipleDelete(table, primary, ids)
          : sp.delete(table, primary, ids);
 
-      return await sql.execute(query).then(r => {
-         if (!isArr) ids = [ids];
-         for (let i in ids) ids[i] = { [primary]: ids[i] };
-         sp_arr.default.delete(data, ids, `?.${primary}`);
-         return r.rowsAffected.map((x, y) => x + y);
+      return sql.execute(query).then(r => {
+         data.deletes(ids);
+         return r.rowsAffected.reduce((x, y) => x + y);
       })
    }
 }

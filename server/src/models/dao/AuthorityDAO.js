@@ -10,10 +10,9 @@ import sp, { modify } from '../services/queryHelper.js';
  */
 export class RoleDAO extends AbstractDAO {
 
-   constructor(arrayStorage = []) {
+   constructor(storage) {
       const primary = 'rid';
-      if (!Array.isArray(arrayStorage)) arrayStorage = [];
-      super('[ROLES]', primary, [primary, 'name'], arrayStorage);
+      super('[ROLES]', primary, [primary, 'name'], storage);
    }
 
    save() { throw `this function in't working!` }
