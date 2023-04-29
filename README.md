@@ -14,9 +14,9 @@ cd ./ecommerce
 Run this file to create database mssql(SQL server)<br/>
 `run file database ...`[ecommerce/ecommerce.sql](./ecommerce.sql)
 
-## I.1 Start server
-- `npm start` to run server api
-```diff
+## I.1 Start server for devevloper (in progress)
+- `npm test` to run server api
+<!-- ```diff
 cd ./server | npm install | npm start
 ```
 ## I.2 Start client
@@ -24,7 +24,7 @@ cd ./server | npm install | npm start
 ```diff
 cd ./client | npm install | npm start
 ```
-`npm test - npm run build - npm run eject`
+`npm test - npm run build - npm run eject` -->
 <hr/>
 
 ## DEMO VIDEO

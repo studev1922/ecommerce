@@ -1,4 +1,3 @@
-import stg from '../storage.js';
 import AbstractDAO from './AbstractDAO.js';
 import sql from '../services/sqlService.js';
 import daoes from '../services/daoService.js';
@@ -32,9 +31,11 @@ export default class AuthorityDAO {
    }
 
    async #createRoles(u_id, names) {
-      let data = (await daoes.role.getList()); // get all role in storage
-      let result = data.filter(e => names.includes(e.name)); // get all roles includes names
-      return result.map(({ rid }) => ({ u_id, [this.rid]: rid })); // map roles to authorities data
+      let data = (await daoes.role.getMap()), roles = []; // get all role in storage
+      data.forEach((e, r_id) => { // get all roles includes names
+         if (names.includes(e.name)) roles.push({ u_id, r_id })
+      });
+      return roles; // map roles to authorities data
    }
 
    getList = async () => this.#read();

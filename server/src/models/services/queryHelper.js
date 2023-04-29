@@ -60,6 +60,9 @@ const date = {
 }
 
 const query = {
+
+    transaction: (query, isThrow) => `BEGIN TRY\n\tBEGIN TRAN\n${query}\n\tCOMMIT\nEND TRY `
+        + `BEGIN CATCH\n\tROLLBACK TRAN;${isThrow ? '\n\tTHROW;\n' : '\n'}END CATCH`,
     procedure: (proceName, data) => `EXECUTE ${proceName} ${modify(data)}`,
 
     /**
@@ -148,7 +151,7 @@ const query = {
      * @returns insert query
      */
     multipleInsert: (table, data, fields) => {
-        if(!data) return;
+        if (!data) return;
         let query = `INSERT INTO ${table}(${fields}) VALUES\n`;
         const compileInsert = `const{${fields}}=e; e=Object.values({${fields}}).join('\x2c')`
 

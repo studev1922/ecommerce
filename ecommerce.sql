@@ -163,7 +163,8 @@ IF EXISTS (SELECT [object_id] FROM sys.procedures WHERE name = N'SP_REGISTER') D
 GO
 CREATE PROCEDURE SP_REGISTER
 	@username varchar(80), @passowrd varchar(256),
-	@fullName nvarchar(50), @image varchar(256)
+	@fullName nvarchar(50), @image varchar(256),
+   @roles varchar(max)
 AS BEGIN
 	DECLARE @meserror nvarchar(max) 
 
@@ -172,10 +173,14 @@ AS BEGIN
 		RAISERROR(@meserror, 12, 1);
 	END 
 	ELSE BEGIN
-        INSERT INTO USERS(uid, password, name, image) 
-        VALUES (@username, PWDENCRYPT(@passowrd), @fullName, iSNULL(@image, 'default.png'));
-        SELECT * FROM USERS WHERE uid = @username;
-    END
+		INSERT INTO USERS(uid, password, name, image) 
+		VALUES (@username, PWDENCRYPT(@passowrd), @fullName, iSNULL(@image, 'default.png'));
+
+		INSERT INTO AUTHORITIES(r_id, u_id)
+		SELECT r2.rid as 'r_id', @username as 'u_id' 
+		FROM STRING_SPLIT(@roles, ',') r1
+		INNER JOIN ROLES r2 ON r1.[value] = r2.name;
+   END
 END
 GO
 

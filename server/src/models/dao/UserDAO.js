@@ -1,7 +1,6 @@
 import AbstractDAO from './AbstractDAO.js';
-import sp from '../services/queryHelper.js';
+import sp, { modify } from '../services/queryHelper.js';
 import sql from '../services/sqlService.js';
-import daoes from '../services/daoService.js';
 
 export default class UserDAO extends AbstractDAO {
 
@@ -18,8 +17,8 @@ export default class UserDAO extends AbstractDAO {
          for (let del of deletes) delete e[del];
       }
 
-      if (Array.isArray(data)) for (let e of data) setOnce(e)
-      else setOnce(data);
+      if (data instanceof Map || Array.isArray(data))
+         data.forEach((e) => setOnce(e)); else setOnce(data);
       return data;
    }
 
@@ -32,27 +31,84 @@ export default class UserDAO extends AbstractDAO {
       this.#setData(data);
    }
 
+   /**
+    * @param {String} uid uid is username
+    * @param {String} password for login
+    * @returns {Object} user with uid and password
+    */
    async login(uid, password) {
       if (!uid || !password) throw 'username or password incorect!'
       let query = sp.procedure('SP_LOGIN', [uid, password]);
 
       return sql.execute(query).then(async r => {
          let [user] = r.recordset;
-         this.#setData(user, 'access', 'regTime', 'password');
+         this.#setData(user, 'password');
          return user;
       });
    }
 
+   /**
+    * 
+    * @param {String} uid 
+    * @param {String} password 
+    * @param {String} name 
+    * @param {String} image 
+    * @param {Array<String>} roles 
+    * @returns 
+    */
    async register(uid, password, name, image, roles) {
       // SP_REGISTER IS PROCEDURE INSERT AND SELECT NEW ACCOUNT
-      let query = sp.procedure('SP_REGISTER', [uid, password, name, image]);
+      return this.save(uid, password, name, image, roles);
+   }
 
-      return sql.execute(query).then(async r => {
-         let { role, data, primary } = this;
-         let result = (await this.#setData(r.recordset))[0];
-         result[role] = (await daoes.auth.save(uid, roles));
-         data.set(result[primary], result);
-         return result;
+   /**
+    * multiple registers
+    * @param {Array<Object>} values an array of register 
+    * @returns {Promise} all data of user
+    */
+   async save(values) {
+      let { primary } = this;
+      let [query, proceName, isArray] = [new String(), 'SP_REGISTER', Array.isArray(values)];
+
+      if (!isArray) values = [values];
+      values.forEach(e => {
+         let { uid, password, name, image, roles } = e;
+         query += sp.procedure(proceName, [uid, password, name, image, roles?.toString()]).concat(';\n')
       });
+      query += sp.select('VIEW_USERS', undefined, undefined,
+         `WHERE ${primary} IN (${modify(values.map(e => e[primary]))})`
+      );
+
+      return this.#restTransaction(query, isArray);
+   }
+
+   /**
+    * @param {Array<Object>} values multiple data of user
+    * @returns {Promise} all data updated
+    */
+   async update(values) {
+      let { table, fields, primary } = this;
+      let isArray = Array.isArray(values);
+      let ids = values.map(e => e[primary]), query = new String();
+      if (isArray) values.forEach(e => e.password = { type: "PWDENCRYPT('?')", value: e.password });
+      else values.password = { type: "PWDENCRYPT('?')", value: values.password };
+
+      query = sp.update(table, values, fields, primary)
+      query += sp.select('VIEW_USERS', undefined, undefined,
+         `WHERE ${primary} IN (${modify(ids)})`
+      );
+      
+      return this.#restTransaction(query, isArray);
+   }
+
+   async #restTransaction(query, isArray) {
+      let { data, primary } = this;
+      
+      return sql.execute(sp.transaction(query, true))
+         .then(r => {
+            let result = this.#setData(r.recordset);
+            data.sets(primary, result);
+            return isArray ? result : result[0];
+         })
    }
 }

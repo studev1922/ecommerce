@@ -31,7 +31,7 @@ export default class AbstractDAO {
 
    /**
     * @param {Array<String>} fields to get only the fields in the data
-    * @returns {MapData} extends Map with fields mapped;
+    * @returns {Promise<MapData>} extends Map with fields mapped;
     */
    async getMap(fields) {
       let { data } = this;
@@ -51,11 +51,11 @@ export default class AbstractDAO {
     * <hr/>
     * @param {Array || Object} values 
     * @param {Boolean} isRecord to get recordsets || values
-    * @returns an Array inserted value
+    * @returns {Promise<Array>} an Array inserted value
     */
    async save(values, isRecord) {
       let { table, fields, data, primary } = this;
-      let isArray = Array.isArray(data);
+      let isArray = data instanceof Map;
       let query = isArray
          ? sp.multipleInsert(table, values, fields)
          : sp.insert(table, values, fields);
@@ -72,24 +72,26 @@ export default class AbstractDAO {
     * update all to database && set all into storage
     * <hr/>
     * @param {Array || Object} values 
-    * @returns {Array} values of parameter if update successfully
+    * @returns {Promise<Array>} values of parameter if update successfully
     */
-   async update(values) {
+   async update(values, isRecord) {
       let { table, fields, primary, data } = this;
       let query = sp.update(table, values, fields, primary);
 
       return sql.execute(query).then(() => {
-         data.set(primary, values);
-         return values;
+         let result = isRecord ? r.recordsets.map(e => e[0])
+            : isArray ? values : [values];
+         data.sets(primary, result);
+         return result;
       })
    }
 
    /**
     * 
     * @param {any} ids delete all by ids
-    * @returns {Number} number of deleted data
+    * @returns {Promise<Number>} number of deleted data
     */
-   delete(ids) {
+   async delete(ids) {
       let isArr = Array.isArray(ids);
       let { table, primary, data } = this;
       let query = isArr
