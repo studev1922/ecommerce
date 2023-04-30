@@ -15,7 +15,7 @@ Run this file to create database mssql(SQL server)<br/>
 `run file database ...`[ecommerce/ecommerce.sql](./ecommerce.sql)
 
 ## I.1 Start server for devevloper (in progress)
-- `npm test` to run server api
+- `cd server | npm test` for run test user dao.
 <!-- ```diff
 cd ./server | npm install | npm start
 ```
