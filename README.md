@@ -1,6 +1,11 @@
 # ecommerce
 Ecommerce webapp is an flatform create by NodeJS with two separates react for clients and express for server directions, communicating through the Rest API, Mssql database
 
+## Requirements
+- nodejs (v18.x.x)
+  - Check nodejs version `node -v` and npm version `npm -v`
+  - If your computer hasn't downloaded yet please download it on [nodejs.org](https://nodejs.org/en/download)
+
 ## Ecommerce is in development
 ### Clone project
 ```
