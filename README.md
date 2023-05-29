@@ -2,11 +2,6 @@
 Ecommerce webapp is an flatform create by NodeJS with two separates react for clients and express for server directions, communicating through the Rest API, Mssql database
 
 ## Ecommerce is in development
-
-## INSTRUCT
-[![Git clone ecommerce](https://img.youtube.com/vi/64qBbOJ6r5w/maxresdefault.jpg)](https://youtu.be/64qBbOJ6r5w)
-<hr>
-
 ### Clone project
 ```
 git clone https://github.com/studev1922/ecommerce.git
@@ -21,4 +16,8 @@ npm install
 npm test
 ```
 
-*The rest will be explained later
+*The rest will be explained later*
+<hr>
+
+## INSTRUCT
+[![Git clone ecommerce](https://img.youtube.com/vi/64qBbOJ6r5w/maxresdefault.jpg)](https://youtu.be/64qBbOJ6r5w)
