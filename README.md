@@ -4,7 +4,7 @@ Ecommerce webapp is an flatform create by NodeJS with two separates react for cl
 ## Requirements
 - nodejs (v18.x.x)
   - Check nodejs version `node -v` and npm version `npm -v`
-  - If your computer hasn't downloaded yet, please download it on [nodejs.org](https://nodejs.org/en/download)
+  - If your computer hasn't downloaded yet, please download it on [nodejs.org](https://nodejs.org/en/download) and check it again.
 
 ## Ecommerce is in development
 ### Clone project
@@ -26,3 +26,5 @@ npm test
 
 ## INSTRUCTION
 [![Git clone ecommerce](https://img.youtube.com/vi/ZZ3-H1e_8kE/maxresdefault.jpg)](https://youtu.be/ZZ3-H1e_8kE)
+
+**THANKS FOR YOUR ATTENTION**
