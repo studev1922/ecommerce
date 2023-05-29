@@ -11,8 +11,7 @@ Ecommerce webapp is an flatform create by NodeJS with two separates react for cl
 ```
 git clone https://github.com/studev1922/ecommerce.git
 ```
-or download [ecommerce-main.zip](/studev1922/ecommerce/archive/refs/heads/main.zip)<br>
-`point to the project EX: cd D:/ecommerce `
+or download [ecommerce-main.zip](/studev1922/ecommerce/archive/refs/heads/main.zip) then `point to the project EX: cd D:/ecommerce `
 ### Install packages
 ```
 npm install
