@@ -16,7 +16,7 @@ or download [ecommerce-main.zip](https://github.com/studev1922/ecommerce/archive
 ```
 npm install
 ```
-### Test crud crawl data
+### Raw test for crawl data
 ```
 npm test
 ```
