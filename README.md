@@ -20,4 +20,4 @@ npm test
 <hr>
 
 ## INSTRUCT
-[![Git clone ecommerce](https://img.youtube.com/vi/64qBbOJ6r5w/maxresdefault.jpg)](https://youtu.be/64qBbOJ6r5w)
+[![Git clone ecommerce](https://img.youtube.com/vi/ZZ3-H1e_8kE/maxresdefault.jpg)](https://youtu.be/ZZ3-H1e_8kE)
