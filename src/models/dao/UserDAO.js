@@ -9,19 +9,6 @@ export default class UserDAO extends AbstractDAO {
       this.role = 'roles';
    }
 
-   #setData(data, ...deletes) {
-      let { role } = this;
-      let setOnce = (e) => {
-         e.password = e.password?.toString('base64');
-         if (e[role]) e[role] = JSON.parse(e[role]).map(r => r.name);
-         for (let del of deletes) delete e[del];
-      }
-
-      if (data instanceof Map || Array.isArray(data))
-         data.forEach((e) => setOnce(e)); else setOnce(data);
-      return data;
-   }
-
    async pullList() {
       let { data, primary } = this;
       let query = sp.select('[VIEW_USERS]');
@@ -93,6 +80,7 @@ export default class UserDAO extends AbstractDAO {
       return this.#restTransaction(query, ids, isArray);
    }
 
+   // The query with transaction
    async #restTransaction(query, ids, isArray) {
       let { data, primary } = this;
       query += sp.select('VIEW_USERS', undefined, undefined, `WHERE ${primary} IN (${modify(ids)})`);
@@ -103,5 +91,18 @@ export default class UserDAO extends AbstractDAO {
             data.sets(primary, result);
             return isArray ? result : result[0];
          })
+   }
+
+   #setData(data, ...deletes) {
+      let { role } = this;
+      let setOnce = (e) => {
+         e.password = e.password?.toString('base64');
+         if (e[role]) e[role] = JSON.parse(e[role]).map(r => r.name);
+         for (let del of deletes) delete e[del];
+      }
+
+      if (data instanceof Map || Array.isArray(data))
+         data.forEach((e) => setOnce(e)); else setOnce(data);
+      return data;
    }
 }

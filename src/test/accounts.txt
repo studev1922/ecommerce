@@ -53,4 +53,4 @@ async function execute(quantity = 1e3) {
    console.log(`run ${times} times in ${(endTime - startTime) / 1E3} seconds!`);
 }
 
-// execute(1e3); // one thousand accounts
+execute(1e3);
